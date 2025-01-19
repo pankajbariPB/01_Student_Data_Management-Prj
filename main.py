@@ -57,6 +57,7 @@ a. Allow deletion of a student record by ID.
 10. Regular Expressions
     a. Validate input like email or phone number if added.
 """
+
 print("1. Press 1 to  insert details.")
 print("2. Press 2 to view all details")
 print("3. Press 3 to update details")
