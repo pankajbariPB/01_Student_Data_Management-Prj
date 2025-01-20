@@ -1,4 +1,7 @@
 """
+Author: Pankaj Bari
+Version: 0.0.5
+
 Project Title: Student Data Management and Analysis
  
 Description:
@@ -22,7 +25,8 @@ Basic data visualization (optional)
 
 Features :
 1. Main Menu
-    a. Display a menu for user options: Add student, View student, Update student, Delete student, View analytics, Exit.
+    a. Display a menu for user options: Add student, View student,
+       Update student, Delete student, View analytics, Exit.
 
 2. Add Student
     a. Input: Name, age, grade, and scores (in multiple subjects).
@@ -63,16 +67,52 @@ print("2. Press 2 to view all details")
 print("3. Press 3 to update details")
 print("4. Press 4 to analyze all details")
 print("5. Press 5 to delete a student")
-print("6. Press 6 to exit Menu")
+print("6. Press 6 to exit Menu ")
+
+
+student=[]
 check =True
 while check:
-    choice=int(input("Enter a choice..."))
-    if choice==1:
-        name = input("Enter the name of the student: ")
-        roll_no=input("Enter the roll number: ")                 # bug not same
-        math=float(input("Enter the marks in mathematics:"))            # what if absent? , enter 0
-        sci=float(input("Enter the marks in science:")) 
-        eng=float(input("Enter the marks in english:"))
-        print("marks collected")
-    elif choice==5:
+    choice=int(input("\n##Select choice from--> 1:Insert, 2:View, 3:Update, 4:Analyse, 5:Delete, 6:Exit -->\t",))
+    if choice == 1:
+        dict1={}
+        name = input("\nEnter the name of the student\t:")
+        try: 
+            id=input("Enter the ID of stundet\t\t:")   
+            assert id not in dict1.values(), "Please Enter Unique 'ID'"
+           
+        except AssertionError as obj:
+            print(obj)
+            choice=1
+              
+        try:
+            
+
+            math=float(input("Enter the marks in mathematics\t:"))            
+            sci=float(input("Enter the marks in science\t:")) 
+            eng=float(input("Enter the marks in english\t:"))
+            wrong=1
+            if(math not in range(0,101)or sci not in range(0,101) or eng not in range(0,101)):
+                wrong=0
+            assert wrong > 0, "Invalid marks! Retry"    
+             
+        except AssertionError as obj1:
+            print(obj1)    
+            dict1.clear()               # Bug wrong marks data also get inserted into student list
+            choice=1
+        
+        #list to store subject score
+        subs=[math,sci,eng]
+        dict1={"name":name,"id":id,"score":subs}
+        student.append(dict1)
+    
+    elif choice == 2:
+            for i in student:
+                print(i)
+                
+    elif choice == 6:
+        print("Visit again...!")
         check = False
+    
+    else:
+        print("Invalid choice")
