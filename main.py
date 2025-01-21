@@ -1,6 +1,6 @@
 """
 Author: Pankaj Bari
-Version: 0.0.5
+Version: 5.1
 
 Project Title: Student Data Management and Analysis
  
@@ -62,6 +62,44 @@ a. Allow deletion of a student record by ID.
     a. Validate input like email or phone number if added.
 """
 
+
+#global variables
+id_valid=True
+marks_valid=True
+check =True
+students=[]
+
+# this function will check for legal data insertion i.e.. id and marks. 
+def validate_id_marks(subs_score):        
+    for s in students:
+        if s['id'] in id:    
+            print("Please enter unique student id instead ",s["id"])
+            id_valid=False
+            print("Warning!!! this data will not be added to records")
+    for i in subs_score:
+        if not( 0 <= i <=100 ):
+            print("Invalid marks, marks must be between 0 and 100...!\nWarning!!! this data will not considered")
+            marks_valid=False
+   
+  
+# function to input details from end user
+def insert_details():    
+    name = input("\nEnter the name of the student\t:")
+    id=input("Enter the ID of student\t\t:")  
+    math=float(input("Enter the marks in mathematics\t:"))            
+    sci=float(input("Enter the marks in science\t:")) 
+    eng=float(input("Enter the marks in english\t:"))
+    subs_score=[math,sci,eng]
+    
+    # calling function
+    validate_id_marks()
+    
+    #inserting valid data
+    if(id_valid and marks_valid == True):
+        student_data={"name":name,"id":id,"score":subs_score}
+        students.append(student_data)
+
+# menu option
 print("1. Press 1 to  insert details.")
 print("2. Press 2 to view all details")
 print("3. Press 3 to update details")
@@ -69,50 +107,25 @@ print("4. Press 4 to analyze all details")
 print("5. Press 5 to delete a student")
 print("6. Press 6 to exit Menu ")
 
-
-student=[]
-check =True
+# menu driven logic
 while check:
-    choice=int(input("\n##Select choice from--> 1:Insert, 2:View, 3:Update, 4:Analyse, 5:Delete, 6:Exit -->\t",))
-    if choice == 1:
-        dict1={}
-        name = input("\nEnter the name of the student\t:")
-        try: 
-            id=input("Enter the ID of stundet\t\t:")   
-            assert id not in dict1.values(), "Please Enter Unique 'ID'"
-           
-        except AssertionError as obj:
-            print(obj)
-            choice=1
-              
-        try:
-            
-
-            math=float(input("Enter the marks in mathematics\t:"))            
-            sci=float(input("Enter the marks in science\t:")) 
-            eng=float(input("Enter the marks in english\t:"))
-            wrong=1
-            if(math not in range(0,101)or sci not in range(0,101) or eng not in range(0,101)):
-                wrong=0
-            assert wrong > 0, "Invalid marks! Retry"    
-             
-        except AssertionError as obj1:
-            print(obj1)    
-            dict1.clear()               # Bug wrong marks data also get inserted into student list
-            choice=1
-        
-        #list to store subject score
-        subs=[math,sci,eng]
-        dict1={"name":name,"id":id,"score":subs}
-        student.append(dict1)
-    
-    elif choice == 2:
-            for i in student:
+    # Error handing block containg risky code
+    try:
+        choice=int(input("\n--Select-choice-from--> 1:Insert, 2:View, 3:Update, 4:Analyse, 5:Delete, 6:Exit -->\t",))
+        if choice == 1:
+            insert_details()
+       
+        elif choice == 2:
+            for i in students:
                 print(i)
                 
-    elif choice == 6:
-        print("Visit again...!")
-        check = False
+        elif choice == 6:
+            print("Visit again...!")
+            check = False
     
-    else:
-        print("Invalid choice")
+        else:
+            print("Invalid choice")
+    except ValueError as ve:
+        print("Enter valid choice between 1 to 6.",ve)
+    
+ 
