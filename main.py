@@ -1,27 +1,19 @@
 """
-Author: Pankaj Bari
-Version: 5.2
+Project Title: Student Data Management and Analysis Tool
+============================================================================= 
 
-Project Title: Student Data Management and Analysis
- 
+Author:
+Pankaj bari
+
+Version:
+ 5.3
 Description:
-This project is designed as part of my Python learning journey. Its goal is to collect, manage, and analyze data from students. 
-The project will allow me to practice key concepts such as data collection, processing, and analysis. 
-It will also include features to generate personalized results and insights for the students based on their data.
-
-< core Python topics to your Python project.>
-Variables, data types, and operators
-Input/output
-Conditional statements and loops
-Functions
-Lists, dictionaries, and tuples
-File handling
-Exception handling
-Object-oriented programming (classes and objects)
-Modules and packages
-Regular expressions
-JSON handling (JSON, XML, CSV optional)
-Basic data visualization (optional)
+This project is designed as part of my Python learning journey.
+  Its goal is to collect, manage, and analyze data from students. 
+  The project will allow me to practice key concepts such as data collection, 
+  processing, and analysis. 
+  It will also include features to generate personalized results and insights,
+  for the students based on their data.
 
 Features :
 1. Main Menu
@@ -64,58 +56,66 @@ a. Allow deletion of a student record by ID.
 
 
 #global variables
-id_valid=True
-marks_valid=True
-check =True
 students=[]
+SUBJECTS=["Math","Science","English"]
  
-# this function will check for legal data insertion i.e.. id and marks. 
-def validate_id_marks(subs_score):    
-    print(id_valid,marks_valid)     
-    for s in students:
-        if s['id'] in id:  
-            id_valid=False  
-            print("Please enter unique student id instead ",s["id"])
-            
-            print("Warning!!! this data will not be added to records")
-    for i in subs_score:
-        if not( 0 <= i <=100 ):
-            marks_valid=False
-            print("Invalid marks, marks must be between 0 and 100...!\nWarning!!! this data will not considered")
-            
-   
-print(id_valid,marks_valid)  
-# function to input details from end user
-def insert_details():    
-    name = input("\nEnter the name of the student\t:")
-    id=input("Enter the ID of student\t\t:")  
-    math=float(input("Enter the marks in mathematics\t:"))            
-    sci=float(input("Enter the marks in science\t:")) 
-    eng=float(input("Enter the marks in english\t:"))
-    subs_score=[math,sci,eng]
-    
-    # # this function will check for legal data insertion i.e.. id and marks. 
-    
-    def validate_id_marks():        
-        for s in students:
-            if s['id'] in id:    
-                print("Please enter unique student id instead ",s["id"])
-                id_valid=False
-                print("Warning!!! this data will not be added to records")
-        for i in subs_score:
-            if not( 0 <= i <=100 ):
-                marks_valid=False
-    print(id_valid,marks_valid)  
-    print("stuednt added successfuly...")
 
-    print("Invalid marks, marks must be between 0 and 100...!\nWarning!!! this data will not considered")
-    #calling function 
-    validate_id_marks()
-    #inserting valid data only
-    if(id_valid == True and marks_valid == True):
-        student_data={"name":name,"id":id,"score":subs_score}
+def validate_id_and_marks(student_id:str,scores:list[float]):    
+    """
+    validates student ID and Marks.
+
+    Args:
+    student_id (str): The ID of the student to validate.
+    scores (list[float]): List of scores to validate.
+
+    returns:
+        bool value
+        error message
+    """
+    for student in students:
+        if student["id"] == student_id: 
+            return False,f"Please enter unique student id instead {student['id']}"
+        
+    for score in scores:
+         if any(score < 0 or score > 100 for score in scores.values()):
+            return False,f"Invalid marks , marks must be between 0 and 100...!"
+    return True,""
+            
+def insert_details():    
+    """promtps user to input student details and adds them to the global student list if valid."""
+    try:
+        name = input("\nEnter the name of the student\t:")
+        student_id=input("Enter the ID of student\t\t:")  
+        scores={}
+        for subject in SUBJECTS:
+            score = float(input(f"Enter the marks in {subject}: "))
+            scores[subject] = score
+        
+        print("Invalid marks, marks must be between 0 and 100...!\nWarning!!! this data will not considered")
+        #calling function 
+        is_valid, message = validate_id_and_marks(student_id, scores)
+        
+        if not is_valid:
+            print(f"Error: {message}")
+            return 
+        
+        # Inserting student data to the records
+        student_data = {"name": name, "id": student_id, "scores": scores}
         students.append(student_data)
-print(id_valid,marks_valid)  
+        print("Student added successfully...")
+    except ValueError as ve:
+        print("invalid input please make sure that marks are numeric values",ve)
+
+def view_records():
+    """
+    Displays all student details in a formatted manner.
+    """
+    print("Student Records:")
+    for student in students:
+        math,sci,eng=student['score']
+        print(f"Name: {student['name']} , ID: {student['id']} , mathematics: {math} , science: {sci} , english :{eng}")
+
+
 # menu option
 print("[1] to  insert details.")
 print("[2] to view all details")
@@ -125,20 +125,15 @@ print("[5] to delete a student")
 print("[6] to exit Menu ")
 
 # menu driven logic
-while check:
-    # Error handing block containg risky code
+while True:
+    # try block containing risky code
     try:
-        choice=int(input("\nSelect the option to start (1-6) :",))
+        choice=int(input("\nSelect the option to start (1-6) :"))
         if choice == 1:
             print("you have selected ",choice)
             insert_details()
-       
         elif choice == 2:
-            print("You have selected ",choice)
-            for student in students:
-                math,sci,eng=student['score']
-                print("Name: {} , ID: {} , mathematics: {} , science: {} , english :{}".format(student['name'],student['id'],math,sci,eng))
-                
+          view_records()
         elif choice == 3:
             print("You have selected ",choice)
         elif choice == 4:
@@ -148,12 +143,11 @@ while check:
         elif choice == 6:
             print("You have selected ",choice)
 
-            print("Visit again...!")
-            check = False
-    
+            print("Visit again..! Thank you for using system")
+            break
         else:
             print("Invalid choice")
-    except ValueError as ve:
-        print("Enter valid choice between 1 to 6.",ve)
+    except ValueError :
+        print("Enter valid choice between 1 to 6.")
     
  
