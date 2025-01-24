@@ -6,7 +6,7 @@ Author:
 Pankaj bari
 
 Version:
- 5.3
+ 5.4
 Description:
 This project is designed as part of my Python learning journey.
   Its goal is to collect, manage, and analyze data from students. 
@@ -90,8 +90,7 @@ def insert_details():
         for subject in SUBJECTS:
             score = float(input(f"Enter the marks in {subject}: "))
             scores[subject] = score
-        
-        print("Invalid marks, marks must be between 0 and 100...!\nWarning!!! this data will not considered")
+
         #calling function 
         is_valid, message = validate_id_and_marks(student_id, scores)
         
@@ -112,7 +111,7 @@ def view_records():
     """
     print("Student Records:")
     for student in students:
-        math,sci,eng=student['score']
+        math,sci,eng=student['scores'].values()
         print(f"Name: {student['name']} , ID: {student['id']} , mathematics: {math} , science: {sci} , english :{eng}")
 
 
