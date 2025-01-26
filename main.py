@@ -6,7 +6,7 @@ Author:
 Pankaj bari
 
 Version:
- 5.4
+ 5.6
 Description:
 This project is designed as part of my Python learning journey.
   Its goal is to collect, manage, and analyze data from students. 
@@ -57,9 +57,9 @@ a. Allow deletion of a student record by ID.
 
 #global variables
 students=[]
-SUBJECTS=["Math","Science","English"]
+SUBJECTS=["Mathematics","Science","English"]
  
-
+# ID MARKS VALID
 def validate_id_and_marks(student_id:str,scores:list[float]):    
     """
     validates student ID and Marks.
@@ -80,15 +80,23 @@ def validate_id_and_marks(student_id:str,scores:list[float]):
          if any(score < 0 or score > 100 for score in scores.values()):
             return False,f"Invalid marks , marks must be between 0 and 100...!"
     return True,""
-            
+
+#valid marks while updating 
+def validate_marks(scores:list[float]):
+    for score in scores:
+         if any(score < 0 or score > 100 for score in scores.values()):
+            return False,f"Invalid marks , marks must be between 0 and 100...!"
+    return True,""
+
+ #INSERT FUNCTION           
 def insert_details():    
     """promtps user to input student details and adds them to the global student list if valid."""
     try:
-        name = input("\nEnter the name of the student\t:")
-        student_id=input("Enter the ID of student\t\t:")  
+        name = input("\nEnter the name of the student\t\t:").strip()
+        student_id=input("Enter the ID of student\t\t\t:").strip()
         scores={}
         for subject in SUBJECTS:
-            score = float(input(f"Enter the marks in {subject}: "))
+            score = float(input(f"Enter the marks in {subject}\t\t:"))
             scores[subject] = score
 
         #calling function 
@@ -105,43 +113,87 @@ def insert_details():
     except ValueError as ve:
         print("invalid input please make sure that marks are numeric values",ve)
 
+#VIEW RECORDS FUNCTION
 def view_records():
     """
     Displays all student details in a formatted manner.
     """
     print("Student Records:")
     for student in students:
-        math,sci,eng=student['scores'].values()
+        math,sci,eng=student['scores'].values() #unpacking the subj in scores{} to variable 
         print(f"Name: {student['name']} , ID: {student['id']} , mathematics: {math} , science: {sci} , english :{eng}")
+
+#UPDATE FUNTION
+def update_records():
+    """
+    Update the student records into list 
+    """
+    update_id=input("Provide ID to update records :").strip()
+    for student in students:
+        if update_id==student['id']:
+            math,sci,eng=student['scores'].values()
+            print(f"Record to be updated is : Name :{student['name']} , ID : {student['id']} , mathematics: {math} , science: {sci} , english :{eng} \n")
+            valid=input('"yes/no" is this your record...? :').lower()
+            if valid=='yes':
+                update_data=input("\n what you want to change...? 'name/id/scores' :").lower()
+                
+               
+                if update_data=='name': 
+                    print(f"previous {update_data} is {student[update_data]}")
+                    updated_data=input(f"Enter new {update_data} to insert in records :")
+                    student[update_data]=updated_data
+                    print(f"{update_data} {updated_data} updated succesfully")
+                    return
+                if update_data=='scores':
+                    print(f"previous {update_data} is {student[update_data]}")
+                    updated_scores={}
+                    for subject in SUBJECTS:
+                        new_score=float(input(f"Enter the score in {subject} \t\t:"))
+                        updated_scores[subject]=new_score
+                    is_update_valid,message = validate_marks(updated_scores)
+                    #validate update before insert
+                    if not is_update_valid:
+                        print(f"Error: {message}")
+                        return
+                    # insert updates scores    
+                    student[update_data]=updated_scores
+                    print(f"{update_data} {updated_scores} inserted succesfully")
+                    return
+                if update_data=='id':
+                    print(f"previous {update_data} is {student[update_data]}")
+                    print("can't update id, you must delete that record first :")
+                    return
+
 
 
 # menu option
-print("[1] to  insert details.")
-print("[2] to view all details")
-print("[3] to update details")
-print("[4] to analyze all details")
-print("[5] to delete a student")
-print("[6] to exit Menu ")
+menu="""[0] to view menu.
+[1] to  insert details.
+[2] to view all details
+[3] to update details
+[4] to analyze all details
+[5] to delete a student
+[6] to exit Menu """
+print(menu)
 
 # menu driven logic
 while True:
     # try block containing risky code
     try:
-        choice=int(input("\nSelect the option to start (1-6) :"))
-        if choice == 1:
-            print("you have selected ",choice)
+        choice=int(input("\nSelect the option to start (0-6) :"))
+        if choice == 0:
+            print(menu)
+        elif choice == 1:
             insert_details()
         elif choice == 2:
           view_records()
         elif choice == 3:
-            print("You have selected ",choice)
+            update_records()
         elif choice == 4:
             print("You have selected ",choice)
         elif choice == 5:
             print("You have selected ",choice)
         elif choice == 6:
-            print("You have selected ",choice)
-
             print("Visit again..! Thank you for using system")
             break
         else:
