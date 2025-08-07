@@ -1,3 +1,4 @@
+
 """
 Project Title: Student Data Management and Analysis Tool
 ============================================================================= 
@@ -90,29 +91,47 @@ def validate_marks(scores:list[float]):
 
  #INSERT FUNCTION           
 def insert_details():    
-    """promtps user to input student details and adds them to the global student list if valid."""
-    try:
-        name = input("\nEnter the name of the student\t\t:").strip()
-        student_id=input("Enter the ID of student\t\t\t:").strip()
-        scores={}
-        for subject in SUBJECTS:
-            score = float(input(f"Enter the marks in {subject}\t\t:"))
-            scores[subject] = score
+    """
+    Collects student details and inserts them into the students list.
+    """
+    student_id = input("Enter student ID: ").strip()
+    name = input("Enter student name: ").strip()
+    
+    #collecting scores
+    scores = {}
+    for subject in SUBJECTS:
+        while True:
+            try:
+                score = float(input(f"Enter score for {subject} (0-100): "))
+                if 0 <= score <= 100:
+                    scores[subject] = score
+                    break
+                else:
+                    print("Score must be between 0 and 100. Please try again.")
+            except ValueError:
+                print("Invalid input. Please enter a numeric value.")
 
-        #calling function 
-        is_valid, message = validate_id_and_marks(student_id, scores)
-        
-        if not is_valid:
-            print(f"Error: {message}")
-            return 
-        
-        # Inserting student data to the records
-        student_data = {"name": name, "id": student_id, "scores": scores}
-        students.append(student_data)
-        print("Student added successfully...")
-    except ValueError as ve:
-        print("invalid input please make sure that marks are numeric values",ve)
+    #validate id and marks
+    is_valid,message=validate_id_and_marks(student_id,scores)
+    if not is_valid:
+        print(f"Error: {message}")
+        return
 
+    #calculate average
+    average_score = round(sum(scores.values()) / len(scores), 2)
+
+    #create student record
+    student_record = {
+        "id": student_id,
+        "name": name,
+        "scores": scores,
+        "average": average_score
+    }
+    
+    #insert record into list
+    students.append(student_record)
+    
+    print(f"Student {name} with ID {student_id} added successfully.")
 #VIEW RECORDS FUNCTION
 def view_records():
     """
@@ -120,7 +139,7 @@ def view_records():
     """
     print("Student Records:")
     for student in students:
-        math,sci,eng=student['scores'].values() #unpacking the subj in scores{} to variable 
+        math,sci,eng=student['scores'].values() #unpacking the subj from scores{} to variable 
         print(f"Name: {student['name']} , ID: {student['id']} , mathematics: {math} , science: {sci} , english :{eng}")
 
 #UPDATE FUNTION
@@ -136,8 +155,6 @@ def update_records():
             valid=input('"yes/no" is this your record...? :').lower()
             if valid=='yes':
                 update_data=input("\n what you want to change...? 'name/id/scores' :").lower()
-                
-               
                 if update_data=='name': 
                     print(f"previous {update_data} is {student[update_data]}")
                     updated_data=input(f"Enter new {update_data} to insert in records :")
@@ -162,17 +179,76 @@ def update_records():
                 if update_data=='id':
                     print(f"previous {update_data} is {student[update_data]}")
                     print("can't update id, you must delete that record first :")
+                    delete_record(student['id'])
                     return
 
-
+analyze_menu="""\nwhat you want to analyze ?
+[0] to see menu.
+[1] to see topper.
+[2] failed students.
+[3] average score of class.
+[4] see average of all class.
+[5] to exit menu.\n"""
+def analyze():
+    print(analyze_menu)
+    for student in students:
+        marks = student["scores"].values()
+        avg=round(sum(marks)/len(marks),2)
+        student["average"]=avg
+    while True:
+        analyze_choice=int(input("select analysis type (0-4):"))
+        
+        if analyze_choice == 0:
+            print(analyze_menu)
+        if analyze_choice == 1:
+            
+            
+            highest_scorer = max(students , key=lambda x:x["average"])
+            math,sci,eng=highest_scorer['scores'].values() #unpacking the subj from scores{} to variable 
+            print(f"\nName: {highest_scorer['name']} , ID: {highest_scorer['id']} , mathematics: {math} , science: {sci} , english :{eng} with percentage {highest_scorer['average']} \n")    
+                                    
+        if analyze_choice == 2:
+                    
+                    print("\n")
+                    for student in students:
+                        if student['average'] <= 35:  
+                            print(f"Name: {student['name']} , ID: {student['id']} , mathematics: {math} , science: {sci} , english :{eng} FAILED with percentage {student['average']} ")    
+        
+        if analyze_choice == 3:
+           total_students = len(students)
+           if total_students == 0:
+               print("No students to analyze.")
+               continue
+           total_score = sum(student["average"] for student in students)
+           average_score = round(total_score / total_students, 2)
+           print(f"\nAverage score of the class is {average_score}\n")
+                       
+        if analyze_choice == 4:
+            for student in students:
+                print(f"\nName: {student['name']} , ID: {student['id']} , mathematics: {math} , science: {sci} , english :{eng} with percentage {student['average']} \n")    
+               
+        if analyze_choice == 5:
+            print("Exiting analysis menu...")
+            break
+def delete_record(student_id=None):
+    """
+    Deletes a student record based on the provided ID.
+    """
+    delete_id = input("Enter the ID of the student to delete: ").strip()
+    for student in students:
+        if student['id'] == delete_id:
+            students.remove(student)
+            print(f"Record with ID {delete_id} deleted successfully.")
+            return
+    print(f"No record found with ID {delete_id}.")
 
 # menu option
 menu="""[0] to view menu.
-[1] to  insert details.
-[2] to view all details
-[3] to update details
-[4] to analyze all details
-[5] to delete a student
+[1] to insert student details.
+[2] to view all records.
+[3] to update details.
+[4] to analyze all details.
+[5] to delete a student record.
 [6] to exit Menu """
 print(menu)
 
@@ -190,9 +266,9 @@ while True:
         elif choice == 3:
             update_records()
         elif choice == 4:
-            print("You have selected ",choice)
+            analyze()
         elif choice == 5:
-            print("You have selected ",choice)
+            delete_record()
         elif choice == 6:
             print("Visit again..! Thank you for using system")
             break
