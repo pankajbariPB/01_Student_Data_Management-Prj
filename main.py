@@ -1,4 +1,5 @@
-
+import sqlite3
+import os
 """
 Project Title: Student Data Management and Analysis Tool
 ============================================================================= 
@@ -54,7 +55,46 @@ a. Allow deletion of a student record by ID.
 10. Regular Expressions
     a. Validate input like email or phone number if added.
 """
+#database configuration
+Database_Name = "student_Management.db"
 
+def create_database():
+    """creates a SQLite database and a table for student records if it doesn't exist.
+    """
+    try:
+        
+        conn=sqlite3.connect("student_Management.db") 
+        cursor=conn.cursor()
+
+        #create students table
+        cursor.execute('''
+            CREATE TABLE IF NOT EXISTS students (
+                id TEXT PRIMARY KEY,
+                name TEXT NOT NULL,
+                mathematics REAL NOT NULL,
+                science REAL NOT NULL,
+                english REAL NOT NULL,
+                       average REAL NOT NULL,
+                       created_date DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        ''')
+        conn.commit()
+        conn.close
+        print(f"Database {Database_Name} created successfully with 'students' table.")
+   
+    except sqlite3.Error as e:
+        print(f"Database error: {e}")
+
+
+def get_database_connection():
+    """Establishes a connection to the SQLite database."""
+    try:
+        conn = sqlite3.connect(Database_Name)
+        return conn
+    except sqlite3.Error as e:
+        print(f"Error connecting to database: {e}")
+        return None
+    
 
 #global variables
 students=[]
