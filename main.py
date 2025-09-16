@@ -1,5 +1,5 @@
 import sqlite3
-import os
+from datetime import datetime
 """
 Project Title: Student Data Management and Analysis Tool
 ============================================================================= 
@@ -55,18 +55,18 @@ a. Allow deletion of a student record by ID.
 10. Regular Expressions
     a. Validate input like email or phone number if added.
 """
-#database configuration
+
+
+
+# Global Database Name
 Database_Name = "student_Management.db"
 
+# Create database and table
 def create_database():
-    """creates a SQLite database and a table for student records if it doesn't exist.
-    """
+    """Creates a SQLite database and students table if it doesn't exist."""
     try:
-        
-        conn=sqlite3.connect("student_Management.db") 
-        cursor=conn.cursor()
-
-        #create students table
+        conn = sqlite3.connect(Database_Name)
+        cursor = conn.cursor()
         cursor.execute('''
             CREATE TABLE IF NOT EXISTS students (
                 id TEXT PRIMARY KEY,
@@ -74,70 +74,73 @@ def create_database():
                 mathematics REAL NOT NULL,
                 science REAL NOT NULL,
                 english REAL NOT NULL,
-                       average REAL NOT NULL,
-                       created_date DATETIME DEFAULT CURRENT_TIMESTAMP
+                phone TEXT ,
+                gmail TEXT,
+                average REAL NOT NULL,
+                created_date DATETIME DEFAULT CURRENT_TIMESTAMP
             )
         ''')
         conn.commit()
-        conn.close
-        print(f"Database {Database_Name} created successfully with 'students' table.")
-   
+        conn.close()
+        print(f"Database '{Database_Name}' created successfully with 'students' table.")
     except sqlite3.Error as e:
         print(f"Database error: {e}")
 
-
+# Function to get DB connection
 def get_database_connection():
-    """Establishes a connection to the SQLite database."""
     try:
-        conn = sqlite3.connect(Database_Name)
-        return conn
+        return sqlite3.connect(Database_Name)
     except sqlite3.Error as e:
         print(f"Error connecting to database: {e}")
         return None
-    
 
-#global variables
-students=[]
-SUBJECTS=["Mathematics","Science","English"]
- 
-# ID MARKS VALID
-def validate_id_and_marks(student_id:str,scores:list[float]):    
-    """
-    validates student ID and Marks.
 
-    Args:
-    student_id (str): The ID of the student to validate.
-    scores (list[float]): List of scores to validate.
+SUBJECTS = ["Mathematics", "Science", "English"]
 
-    returns:
-        bool value
-        error message
-    """
-    for student in students:
-        if student["id"] == student_id: 
-            return False,f"Please enter unique student id instead {student['id']}"
-        
-    for score in scores:
-         if any(score < 0 or score > 100 for score in scores.values()):
-            return False,f"Invalid marks , marks must be between 0 and 100...!"
-    return True,""
+# Validate ID and marks
+def validate_id_and_marks(student_id, scores):
+    conn = get_database_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id FROM students WHERE id=?", (student_id,))
+    if cursor.fetchone() is not None:
+        conn.close()
+        return False, f"Student ID {student_id} already exists in database."
 
-#valid marks while updating 
-def validate_marks(scores:list[float]):
-    for score in scores:
-         if any(score < 0 or score > 100 for score in scores.values()):
-            return False,f"Invalid marks , marks must be between 0 and 100...!"
-    return True,""
+    for score in scores.values():
+        if score < 0 or score > 100:
+            return False, "Marks must be between 0 and 100."
+    conn.close()
+    return True, ""
 
- #INSERT FUNCTION           
-def insert_details():    
-    """
-    Collects student details and inserts them into the students list.
-    """
+# Validate marks only
+def validate_marks(scores):
+    for score in scores.values():
+        if score < 0 or score > 100:
+            return False, "Marks must be between 0 and 100."
+    return True, ""
+
+def validate_phone_and_gmail(phone="NA", gmail="NA"):
+    phone_pattern = r'^(\+91[-\s]?)?\d{10}$'  # Indian phone pattern example
+    gmail_pattern = r'^[a-zA-Z0-9_.+-]+@gmail\.com$'  # Strict Gmail pattern
+
+    if phone != "NA":
+        if not re.match(phone_pattern, phone):
+            return False, "Invalid phone number format."
+
+    if gmail != "NA":
+        if not re.match(gmail_pattern, gmail):
+            return False, "Invalid Gmail ID format."
+
+    if phone == "NA" and gmail == "NA":
+       pass
+    return True, ""
+
+
+# Insert details into DB
+def insert_details():
     student_id = input("Enter student ID: ").strip()
     name = input("Enter student name: ").strip()
-    
-    #collecting scores
+
     scores = {}
     for subject in SUBJECTS:
         while True:
@@ -151,158 +154,191 @@ def insert_details():
             except ValueError:
                 print("Invalid input. Please enter a numeric value.")
 
-    #validate id and marks
-    is_valid,message=validate_id_and_marks(student_id,scores)
+    is_valid, message = validate_id_and_marks(student_id, scores)
     if not is_valid:
         print(f"Error: {message}")
         return
 
-    #calculate average
+    phone=input("Enter the Phone Number :").strip()
+    gmail=input("enter the Gmail ID:").strip()
+    
+    is_valid, message = validate_phone_and_gmail(phone, gmail)
+    if not is_valid: 
+        print(f"Error: {message}")
+        return
+
     average_score = round(sum(scores.values()) / len(scores), 2)
 
-    #create student record
-    student_record = {
-        "id": student_id,
-        "name": name,
-        "scores": scores,
-        "average": average_score
-    }
-    
-    #insert record into list
-    students.append(student_record)
-    
-    print(f"Student {name} with ID {student_id} added successfully.")
-#VIEW RECORDS FUNCTION
+    conn = get_database_connection()
+    cursor = conn.cursor()
+    cursor.execute("""
+        INSERT INTO students (id, name, mathematics, science, english, phone, gmail, average)
+        VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    """, (student_id, name, scores["Mathematics"], scores["Science"], scores["English"], phone, gmail, average_score))
+    conn.commit()
+    conn.close()
+
+    print(f"Student {name} with ID {student_id} added successfully to database.")
+
+# View all records from DB
 def view_records():
-    """
-    Displays all student details in a formatted manner.
-    """
-    print("Student Records:")
-    for student in students:
-        math,sci,eng=student['scores'].values() #unpacking the subj from scores{} to variable 
-        print(f"Name: {student['name']} , ID: {student['id']} , mathematics: {math} , science: {sci} , english :{eng}")
+    conn = get_database_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT id, name, mathematics, science, english, phone, gmail, average FROM students")
+    records = cursor.fetchall()
+    if not records:
+        print("No records found.")
+    else:
+        print("Student Records:\n")
+        for row in records:
+            print(f"Name: {row[1]}, ID: {row[0]}, Mathematics: {row[2]}, Science: {row[3]}, English: {row[4]} Phone: {row[5]}, Gmail: {row[6]}, Average: {row[7]}")
+    conn.close()
 
-#UPDATE FUNTION
+# Update student record in DB
 def update_records():
-    """
-    Update the student records into list 
-    """
-    update_id=input("Provide ID to update records :").strip()
-    for student in students:
-        if update_id==student['id']:
-            math,sci,eng=student['scores'].values()
-            print(f"Record to be updated is : Name :{student['name']} , ID : {student['id']} , mathematics: {math} , science: {sci} , english :{eng} \n")
-            valid=input('"yes/no" is this your record...? :').lower()
-            if valid=='yes':
-                update_data=input("\n what you want to change...? 'name/id/scores' :").lower()
-                if update_data=='name': 
-                    print(f"previous {update_data} is {student[update_data]}")
-                    updated_data=input(f"Enter new {update_data} to insert in records :")
-                    student[update_data]=updated_data
-                    print(f"{update_data} {updated_data} updated succesfully")
-                    return
-                if update_data=='scores':
-                    print(f"previous {update_data} is {student[update_data]}")
-                    updated_scores={}
-                    for subject in SUBJECTS:
-                        new_score=float(input(f"Enter the score in {subject} \t\t:"))
-                        updated_scores[subject]=new_score
-                    is_update_valid,message = validate_marks(updated_scores)
-                    #validate update before insert
-                    if not is_update_valid:
-                        print(f"Error: {message}")
-                        return
-                    # insert updates scores    
-                    student[update_data]=updated_scores
-                    print(f"{update_data} {updated_scores} inserted succesfully")
-                    return
-                if update_data=='id':
-                    print(f"previous {update_data} is {student[update_data]}")
-                    print("can't update id, you must delete that record first :")
-                    delete_record(student['id'])
-                    return
+    update_id = input("Enter Student ID to update: ").strip()
+    conn = get_database_connection()
+    cursor = conn.cursor()
+    cursor.execute("SELECT * FROM students WHERE id=?", (update_id,))
+    record = cursor.fetchone()
+    if not record:
+        print("No such student found.")
+        conn.close()
+        return
 
-analyze_menu="""\nwhat you want to analyze ?
-[0] to see menu.
-[1] to see topper.
-[2] failed students.
-[3] average score of class.
-[4] see average of all class.
-[5] to exit menu.\n"""
-def analyze():
-    print(analyze_menu)
-    for student in students:
-        marks = student["scores"].values()
-        avg=round(sum(marks)/len(marks),2)
-        student["average"]=avg
-    while True:
-        analyze_choice=int(input("select analysis type (0-4):"))
-        
-        if analyze_choice == 0:
-            print(analyze_menu)
-        if analyze_choice == 1:
-            
-            
-            highest_scorer = max(students , key=lambda x:x["average"])
-            math,sci,eng=highest_scorer['scores'].values() #unpacking the subj from scores{} to variable 
-            print(f"\nName: {highest_scorer['name']} , ID: {highest_scorer['id']} , mathematics: {math} , science: {sci} , english :{eng} with percentage {highest_scorer['average']} \n")    
-                                    
-        if analyze_choice == 2:
-                    
-                    print("\n")
-                    for student in students:
-                        if student['average'] <= 35:  
-                            print(f"Name: {student['name']} , ID: {student['id']} , mathematics: {math} , science: {sci} , english :{eng} FAILED with percentage {student['average']} ")    
-        
-        if analyze_choice == 3:
-           total_students = len(students)
-           if total_students == 0:
-               print("No students to analyze.")
-               continue
-           total_score = sum(student["average"] for student in students)
-           average_score = round(total_score / total_students, 2)
-           print(f"\nAverage score of the class is {average_score}\n")
-                       
-        if analyze_choice == 4:
-            for student in students:
-                print(f"\nName: {student['name']} , ID: {student['id']} , mathematics: {math} , science: {sci} , english :{eng} with percentage {student['average']} \n")    
-               
-        if analyze_choice == 5:
-            print("Exiting analysis menu...")
-            break
-def delete_record(student_id=None):
-    """
-    Deletes a student record based on the provided ID.
-    """
-    delete_id = input("Enter the ID of the student to delete: ").strip()
-    for student in students:
-        if student['id'] == delete_id:
-            students.remove(student)
-            print(f"Record with ID {delete_id} deleted successfully.")
+    print(f"Current Record →Name: {record[1]}, ID: {record[0]}, Mathematics: {record[2]}, Science: {record[3]}, English: {record[4]} Phone: {record[5]}, Gmail: {record[6]}, Average: {record[7]}")
+
+    update_choice = input("What do you want to update? (name/scores/phone/gmail): ").lower()
+
+    if update_choice == "name":
+        new_name = input("Enter new name: ")
+        cursor.execute("UPDATE students SET name=? WHERE id=?", (new_name, update_id))
+        print("Name updated successfully.")
+
+    elif update_choice == "scores":
+        scores = {}
+        for subject in SUBJECTS:
+            scores[subject] = float(input(f"Enter new score for {subject}: "))
+        is_valid, message = validate_marks(scores)
+        if not is_valid:
+            print(f"Error: {message}")
+            conn.close()
             return
-    print(f"No record found with ID {delete_id}.")
+        avg = round(sum(scores.values()) / 3, 2)
+        cursor.execute("""
+            UPDATE students SET mathematics=?, science=?, english=?, average=?
+            WHERE id=?
+        """, (scores["Mathematics"], scores["Science"], scores["English"], avg, update_id))
+        print("Scores updated successfully.")
+    
+    elif update_choice == "phone":
+        new_phone = input("Enter new phone number: ").strip()
+        is_valid, message = validate_phone_and_gmail(phone=new_phone)
+        if not is_valid:
+            print(f"Error: {message}")
+            conn.close()
+            return
+        cursor.execute("UPDATE students SET phone=? WHERE id=?", (new_phone, update_id))
+        print("Phone number updated successfully.")
+    
+    elif update_choice == "gmail":
+        new_gmail = input("Enter new Gmail ID: ").strip()
+        is_valid, message = validate_phone_and_gmail(gmail=new_gmail)
+        if not is_valid:
+            print(f"Error: {message}")
+            conn.close()
+            return
+        cursor.execute("UPDATE students SET gmail=? WHERE id=?", (new_gmail, update_id))
+        print("Gmail ID updated successfully.")
 
-# menu option
-menu="""[0] to view menu.
-[1] to insert student details.
-[2] to view all records.
-[3] to update details.
-[4] to analyze all details.
-[5] to delete a student record.
-[6] to exit Menu """
+    else:
+        print("Invalid choice.")
+
+    conn.commit()
+    conn.close()
+
+# Delete student by ID
+def delete_record():
+    delete_id = input("Enter Student ID to delete: ").strip()
+    conn = get_database_connection()
+    cursor = conn.cursor()
+    cursor.execute("DELETE FROM students WHERE id=?", (delete_id,))
+    conn.commit()
+    if cursor.rowcount > 0:
+        print(f"Student {delete_id} deleted successfully.")
+    else:
+        print("No such student found.")
+    conn.close()
+
+# Analyze student data
+def analyze():
+    analyze_menu = """\nSelect Option:
+[0] Menu
+[1] Show Topper
+[2] Failed Students
+[3] Class Average
+[4] All Students with Average
+[5] Exit
+"""
+    print(analyze_menu)
+    conn = get_database_connection()
+    cursor = conn.cursor()
+
+    while True:
+        choice = int(input("Enter choice (0-5): "))
+
+        if choice == 0:
+            print(analyze_menu)
+        elif choice == 1:  # topper
+            cursor.execute("SELECT * FROM students ORDER BY average DESC LIMIT 1")
+            topper = cursor.fetchone()
+            if topper:
+                print(f"Topper: {topper[1]} ({topper[0]}) → Avg: {topper[5]}")
+        elif choice == 2:  # failed students
+            cursor.execute("SELECT * FROM students WHERE average <= 35")
+            fails = cursor.fetchall()
+            for f in fails:
+                print(f"Failed: {f[1]} ({f[0]}) → Avg: {f[5]}")
+        elif choice == 3:  # class average
+            cursor.execute("SELECT AVG(average) FROM students")
+            avg = cursor.fetchone()[0]
+            print(f"Class Average: {round(avg, 2) if avg else 'N/A'}")
+        elif choice == 4:  # all
+            cursor.execute("SELECT * FROM students")
+            all_students = cursor.fetchall()
+            for s in all_students:
+                print(f"{s[1]} ({s[0]}) → Avg: {s[5]}")
+        elif choice == 5:
+            break
+        else:
+            print("Invalid choice.")
+
+    conn.close()
+
+# Initialize DB
+create_database()
+
+# Menu-driven logic
+menu = """
+[0] Show Menu
+[1] Insert Student
+[2] View Students
+[3] Update Student
+[4] Analyze Students
+[5] Delete Student
+[6] Exit
+"""
 print(menu)
 
-# menu driven logic
 while True:
-    # try block containing risky code
     try:
-        choice=int(input("\nSelect the option to start (0-6) :"))
+        choice = int(input("Choose (0-6): "))
         if choice == 0:
             print(menu)
         elif choice == 1:
             insert_details()
         elif choice == 2:
-          view_records()
+            view_records()
         elif choice == 3:
             update_records()
         elif choice == 4:
@@ -310,11 +346,9 @@ while True:
         elif choice == 5:
             delete_record()
         elif choice == 6:
-            print("Visit again..! Thank you for using system")
+            print("Goodbye!")
             break
         else:
-            print("Invalid choice")
-    except ValueError :
-        print("Enter valid choice between 1 to 6.")
-    
- 
+            print("Invalid choice!")
+    except ValueError:
+        print("Please enter a number.")
